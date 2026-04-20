@@ -1,0 +1,33 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:drawable="@drawable/splash_icon">
+
+    <target android:name="bike_group">
+        <aapt:attr name="android:animation">
+            <set>
+                <!-- Salto da Bike (MTB Style - Muito radical) -->
+                <objectAnimator
+                    android:propertyName="translateY"
+                    android:duration="350"
+                    android:valueFrom="0"
+                    android:valueTo="-65"
+                    android:valueType="floatType"
+                    android:interpolator="@android:anim/decelerate_interpolator"
+                    android:repeatCount="infinite"
+                    android:repeatMode="reverse" />
+
+                <!-- Inclinação no ar -->
+                <objectAnimator
+                    android:propertyName="rotation"
+                    android:duration="350"
+                    android:valueFrom="0"
+                    android:valueTo="-35"
+                    android:valueType="floatType"
+                    android:interpolator="@android:anim/accelerate_decelerate_interpolator"
+                    android:repeatCount="infinite"
+                    android:repeatMode="reverse" />
+            </set>
+        </aapt:attr>
+    </target>
+
+</animated-vector>

@@ -1,0 +1,59 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Círculo Central com Degradê e Borda Azul Muito Escura -->
+    <path
+        android:fillColor="#001D26"
+        android:strokeColor="#003747"
+        android:strokeWidth="16"
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
+
+    <!-- Borda Branca Exterior (Ajustada para ser visível) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="12"
+        android:pathData="M54,54m-39,0a39,39 0,1 1,78 0a39,39 0,1 1,-78 0" />
+
+    <!-- Bicicleta Branca Centrada -->
+    <group
+        android:translateX="37"
+        android:translateY="42"
+        android:scaleX="0.4"
+        android:scaleY="0.4">
+
+        <!-- Rodas -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="6"
+            android:pathData="M15,45m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0" />
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="6"
+            android:pathData="M65,45m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0" />
+
+        <!-- Quadro -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="6"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M15,45 L40,10 L65,45 L38,45 Z" />
+
+        <!-- Guiador -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="6"
+            android:strokeLineCap="round"
+            android:pathData="M40,10 L55,0 H65" />
+
+        <!-- Selim -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="6"
+            android:strokeLineCap="round"
+            android:pathData="M30,23 H20" />
+    </group>
+</vector>
