@@ -15,6 +15,8 @@ import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 data class YearlyStats(
@@ -94,7 +96,7 @@ class StravaViewModel(application: Application) : AndroidViewModel(application) 
     fun getAuthUrl(): String {
         val verifier = CodeVerifier()
         currentCodeVerifier = verifier
-        // Salva para persistência caso o app seja fechado pelo sistema
+        // Save for persistence in case the app is closed by the system
         prefs.edit().putString("pkce_verifier_value", verifier.value).apply()
         
         val encodedUri = Uri.encode(REDIRECT_URI)
@@ -141,13 +143,13 @@ class StravaViewModel(application: Application) : AndroidViewModel(application) 
         uiState = StravaState.Loading
         viewModelScope.launch {
             try {
-                // Buscamos as últimas 100 atividades para garantir que pegamos algo
+                // We fetch the last 100 activities to ensure we get something
                 val response = stravaApi.getActivities("Bearer $accessToken", perPage = 100)
                 android.util.Log.d("StravaAuth", "Total activities received: ${response.size}")
                 
                 val allBikeActivities = response
                     .filter { 
-                        // Strava type pode ser "Ride", "EBikeRide", "VirtualRide", "MountainBikeRide"
+                        // Strava type can be "Ride", "EBikeRide", "VirtualRide", "MountainBikeRide"
                         val type = it.type.lowercase()
                         val isBike = type.contains("ride") || type.contains("bike")
                         
@@ -155,14 +157,23 @@ class StravaViewModel(application: Application) : AndroidViewModel(application) 
                         isBike
                     }
                     .map {
+                        val startTimeStr = it.start_date_local
+                        val startZoned = ZonedDateTime.parse(startTimeStr)
+                        val startLocal = startZoned.toLocalDateTime()
+                        val endLocal = startLocal.plusSeconds(it.elapsed_time.toLong())
+                        
+                        val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
                         BikeActivity(
                             id = it.id,
-                            date = LocalDate.parse(it.substringDate()),
+                            date = startLocal.toLocalDate(),
                             distanceKm = (it.distance / 1000.0),
                             durationMinutes = it.moving_time / 60,
                             elevationGain = it.total_elevation_gain,
                             calories = it.calories ?: it.kilojoules ?: 0f,
-                            name = it.name
+                            name = it.name,
+                            startTime = startLocal.format(timeFormatter),
+                            endTime = endLocal.format(timeFormatter)
                         )
                     }
 
@@ -173,17 +184,33 @@ class StravaViewModel(application: Application) : AndroidViewModel(application) 
                     return@launch
                 }
 
-                // Definimos o "resumo semanal" baseado na data da atividade mais recente encontrada
-                val mostRecentDate = allBikeActivities.maxOf { it.date }
-                val startOfWeek = mostRecentDate.minusDays(6)
-                
-                // Pegamos as atividades dessa "semana" (dos últimos 7 dias a partir da última pedalada)
-                val weeklyActivities = allBikeActivities.filter { 
-                    !it.date.isBefore(startOfWeek) && !it.date.isAfter(mostRecentDate)
+                // Monday to Sunday logic
+                val today = LocalDate.now()
+                // Find the Monday of the current week
+                // DayOfWeek: 1 (Monday) to 7 (Sunday)
+                val daysToSubtract = today.dayOfWeek.value - 1
+                var startOfPeriod = today.minusDays(daysToSubtract.toLong())
+                var endOfPeriod = startOfPeriod.plusDays(6)
+
+                // Filter current week activities
+                var weeklyActivities = allBikeActivities.filter { 
+                    !it.date.isBefore(startOfPeriod) && !it.date.isAfter(endOfPeriod)
                 }
 
-                // Agrupamos por data para o resumo
-                val displayList = (if (weeklyActivities.isNotEmpty()) weeklyActivities else allBikeActivities.take(10))
+                // If no activities in the current week, show the previous week
+                if (weeklyActivities.isEmpty()) {
+                    startOfPeriod = startOfPeriod.minusDays(7)
+                    endOfPeriod = startOfPeriod.plusDays(6)
+                    weeklyActivities = allBikeActivities.filter { 
+                        !it.date.isBefore(startOfPeriod) && !it.date.isAfter(endOfPeriod)
+                    }
+                }
+                
+                // Group by date for the summary (activities to be listed)
+                // If current/previous week is empty (extreme case), show the total last 10
+                val activitiesToDisplay = if (weeklyActivities.isNotEmpty()) weeklyActivities else allBikeActivities.take(10)
+                
+                val displayList = activitiesToDisplay
                     .groupBy { it.date }
                     .map { (date, acts) ->
                         BikeActivity(
@@ -194,6 +221,8 @@ class StravaViewModel(application: Application) : AndroidViewModel(application) 
                             elevationGain = acts.sumOf { it.elevationGain.toDouble() }.toFloat(),
                             calories = acts.sumOf { it.calories.toDouble() }.toFloat(),
                             name = if (acts.size > 1) "${acts.size} Activities" else acts.first().name,
+                            startTime = if (acts.size == 1) acts.first().startTime else "",
+                            endTime = if (acts.size == 1) acts.first().endTime else "",
                             activityCount = acts.size
                         )
                     }
@@ -201,9 +230,9 @@ class StravaViewModel(application: Application) : AndroidViewModel(application) 
 
                 lastWeeklyKm = weeklyActivities.sumOf { it.distanceKm }
                 val dateFormatter = DateTimeFormatter.ofPattern("dd/MM", java.util.Locale.US)
-                lastWeeklyDateRange = "${startOfWeek.format(dateFormatter)} - ${mostRecentDate.format(dateFormatter)}"
+                lastWeeklyDateRange = "${startOfPeriod.format(dateFormatter)} - ${endOfPeriod.format(dateFormatter)}"
 
-                // Estatísticas anuais
+                // Yearly statistics
                 val yearlyStatsList = allBikeActivities
                     .groupBy { it.date.year }
                     .map { (year, acts) ->

@@ -16,6 +16,8 @@ data class BikeActivity(
     val elevationGain: Float = 0f,
     val calories: Float = 0f,
     val name: String = "",
+    val startTime: String = "",
+    val endTime: String = "",
     val activityCount: Int = 1
 )
 
@@ -28,7 +30,8 @@ data class StravaActivity(
     val calories: Float?,
     val kilojoules: Float?,
     val type: String,
-    val start_date_local: String
+    val start_date_local: String,
+    val elapsed_time: Int
 )
 
 data class TokenResponse(

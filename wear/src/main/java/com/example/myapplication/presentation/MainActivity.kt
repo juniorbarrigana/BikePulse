@@ -3,6 +3,7 @@ package com.example.myapplication.presentation
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import com.example.myapplication.BuildConfig
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -119,7 +120,7 @@ class MainActivity : ComponentActivity() {
             val code = data.getQueryParameter("code")
             val path = data.path ?: ""
             
-            // Verificação mais flexível para aceitar redirects do Google e da Samsung
+            // More flexible verification to accept Google and Samsung redirects
             val isAuthRedirect = path.contains("3p_auth") || 
                                  data.host == "wear.googleapis.com" || 
                                  data.scheme == "bikeapp" || 
@@ -345,12 +346,22 @@ fun BikeActivityCard(activity: BikeActivity, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = activity.date.format(dateFormatter).uppercase(),
-                    style = MaterialTheme.typography.caption2,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
+                Column {
+                    Text(
+                        text = activity.date.format(dateFormatter).uppercase(),
+                        style = MaterialTheme.typography.caption2,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                    if (activity.activityCount == 1 && activity.startTime.isNotEmpty()) {
+                        Text(
+                            text = "${activity.startTime} - ${activity.endTime}",
+                            style = MaterialTheme.typography.caption3.copy(fontSize = 9.sp),
+                            color = BikeBlue,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
                 if (activity.activityCount > 1) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -455,7 +466,17 @@ fun ActivitiesDayDetailOverlay(activities: List<BikeActivity>, onClose: () -> Un
             items(activities) { activity ->
                 Card(onClick = {}, modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), backgroundPainter = CardDefaults.cardBackgroundPainter(startBackgroundColor = Color(0xFF111111))) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(activity.name, style = MaterialTheme.typography.caption2, modifier = Modifier.weight(1f), maxLines = 1)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(activity.name, style = MaterialTheme.typography.caption2, maxLines = 1)
+                            if (activity.startTime.isNotEmpty()) {
+                                Text(
+                                    text = "${activity.startTime} - ${activity.endTime}",
+                                    style = MaterialTheme.typography.caption3.copy(fontSize = 8.sp),
+                                    color = BikeBlue,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                         Column(horizontalAlignment = Alignment.End) {
                             Text("${String.format(Locale.US, "%.1f", activity.distanceKm)}km", color = BikeGreen, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.caption2)
                             Text("${activity.durationMinutes}m", style = MaterialTheme.typography.caption2)
